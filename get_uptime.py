@@ -9,7 +9,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 username = config.get('Credential', 'username')
 password = config.get('Credential', 'password')
-url = config.get('General', 'url')
+url = config.get('URL', 'uptime')
 
 res = requests.get(url,auth=HTTPDigestAuth(username,password))
 
