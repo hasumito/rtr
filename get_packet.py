@@ -4,6 +4,8 @@ import datetime
 import re
 import requests
 from requests.auth import HTTPDigestAuth
+import psycopg2
+import sys
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -32,5 +34,51 @@ print(dt_now.strftime('%Y-%m-%d %H:%M:%S') + ',' +
     lan_rx.group(1) + ',' +
     wan_tx.group(1) + ',' +
     wan_rx.group(1) + ',' +
+    w2g_tx.group(1) + ',' +
+    w2g_rx.group(1) + ',' +
     w5g_tx.group(1) + ',' +
     w5g_rx.group(1))
+
+dbname = config.get('DB', 'dbname')
+host = config.get('DB', 'host')
+user = config.get('DB', 'user')
+password = config.get('DB', 'password')
+
+dsn = 'dbname=' + dbname + ' host=' + host + ' user=' + user + ' password=' + password
+try:
+    conn = psycopg2.connect(dsn)
+except Exception as e:
+    print('Unable to connect!')
+    print(e)
+    sys.exit(1)
+else:
+    with conn.cursor() as cur:
+        sql = '''
+            INSERT INTO RtrUsage (
+                created_at, 
+                lan_tx, 
+                lan_rx, 
+                wan_tx, 
+                wan_rx,
+                w2g_tx,
+                w2g_rx,
+                w5g_tx,
+                w5g_rx
+                )
+                VALUES
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        '''
+        cur.execute(sql, (
+                            dt_now.strftime('%Y-%m-%d %H:%M:%S'),
+                            lan_tx.group(1),
+                            lan_rx.group(1),
+                            wan_tx.group(1),
+                            wan_rx.group(1),
+                            w2g_tx.group(1),
+                            w2g_rx.group(1),
+                            w5g_tx.group(1),
+                            w5g_rx.group(1)
+                        ))
+
+        conn.commit()
+        conn.close()
